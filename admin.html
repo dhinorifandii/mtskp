@@ -18,6 +18,10 @@
     
     <!-- SWEETALERT2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- JSZIP & FILESAVER (Untuk Fitur Backup) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
         .status-pending { color: #f3cb51; background: rgba(243, 203, 81, 0.1); }
@@ -86,6 +90,12 @@
                     </a>
                     <a href="#" onclick="switchView('sertifikat')" id="menu-sertifikat" class="flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition">
                         <ion-icon name="medal-outline" class="text-xl"></ion-icon> Sertifikat
+                    </a>
+                    <a href="#" onclick="switchView('backup')" id="menu-backup" class="flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition">
+                        <ion-icon name="archive-outline" class="text-xl"></ion-icon> Arsip & Backup
+                    </a>
+                    <a href="#" onclick="switchView('pengaturan')" id="menu-pengaturan" class="flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition">
+                        <ion-icon name="settings-outline" class="text-xl"></ion-icon> Pengaturan Web
                     </a>
                 </nav>
             </div>
@@ -333,6 +343,142 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- ================= VIEW ARSIP & BACKUP ================= -->
+                <div id="content-backup" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-1">Arsip & Backup Berkas</h2>
+                            <p class="text-gray-600 text-sm">Unduh semua berkas pendaftar dalam bentuk ZIP dan bersihkan storage cloud sekolah Anda.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl overflow-hidden shadow-lg border border-gray-100 flex flex-col">
+                        <!-- Toolbar Backup -->
+                        <div class="p-6 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between gap-4 xl:items-center">
+                            <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                                <div class="relative w-full sm:w-64">
+                                    <ion-icon name="search-outline" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></ion-icon>
+                                    <input type="text" id="search-backup" placeholder="Cari Siswa / NISN..." class="w-full bg-white border border-gray-300 pl-11 pr-4 py-2.5 rounded-xl focus:border-purple-500 outline-none transition text-sm text-gray-800">
+                                </div>
+                                <select id="filter-year-backup" class="w-full sm:w-40 bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-purple-500 outline-none transition text-gray-800 font-semibold text-sm">
+                                    <option value="all">Semua Tahun</option>
+                                    <!-- Tahun di-generate lewat JS -->
+                                </select>
+                                <select id="filter-status-backup" class="w-full sm:w-40 bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-purple-500 outline-none transition text-gray-800 font-semibold text-sm">
+                                    <option value="all">Semua Status</option>
+                                    <option value="diterima">Diterima</option>
+                                    <option value="ditolak">Ditolak</option>
+                                    <option value="pending">Menunggu</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-3 w-full xl:w-auto xl:justify-end">
+                                <button onclick="startBackupProcess(false)" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center gap-2 font-bold shadow-lg text-sm w-full sm:w-auto justify-center">
+                                    <ion-icon name="download-outline" class="text-lg"></ion-icon> Backup Terpilih
+                                </button>
+                                <button onclick="startBackupProcess(true)" class="bg-red-500 text-white px-5 py-2.5 rounded-xl hover:bg-red-600 transition flex items-center gap-2 font-bold shadow-lg text-sm w-full sm:w-auto justify-center group relative">
+                                    <ion-icon name="trash-bin-outline" class="text-lg"></ion-icon> Backup & Hapus
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Info Selection -->
+                        <div class="bg-purple-50 border-b border-purple-100 px-6 py-3 flex justify-between items-center text-sm">
+                            <span class="font-bold text-purple-700"><span id="backup-selected-count">0</span> Siswa Terpilih</span>
+                            <span class="text-gray-500 italic flex items-center gap-1"><ion-icon name="information-circle"></ion-icon> Maksimal 100 siswa per backup untuk mencegah crash browser.</span>
+                        </div>
+
+                        <!-- Table Backup -->
+                        <div class="table-container overflow-x-auto max-h-[500px]">
+                            <table class="w-full text-left border-collapse relative">
+                                <thead class="sticky top-0 z-10 bg-gray-100 shadow-sm">
+                                    <tr class="text-gray-600 text-xs uppercase tracking-wider border-b border-gray-200">
+                                        <th class="px-4 py-4 text-center w-12"><input type="checkbox" id="backup-select-all" onclick="toggleBackupSelectAll(this)" class="w-4 h-4 cursor-pointer accent-purple-600"></th>
+                                        <th class="px-6 py-4 font-bold min-w-[200px]">Nama Siswa</th>
+                                        <th class="px-6 py-4 font-bold min-w-[120px]">NISN</th>
+                                        <th class="px-6 py-4 font-bold min-w-[120px]">Tahun</th>
+                                        <th class="px-6 py-4 font-bold min-w-[120px]">Status</th>
+                                        <th class="px-6 py-4 font-bold text-center min-w-[120px]">Jumlah File</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="backup-table" class="divide-y divide-gray-100 text-sm">
+                                    <!-- Data Backup -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Bantuan -->
+                    <div class="mt-6 bg-blue-50 border border-blue-200 p-5 rounded-2xl flex gap-4 items-start shadow-sm">
+                        <ion-icon name="help-circle" class="text-3xl text-blue-500 shrink-0"></ion-icon>
+                        <div>
+                            <h4 class="font-bold text-blue-800 mb-1">Cara Melakukan Backup Tahunan</h4>
+                            <p class="text-sm text-blue-700 leading-relaxed mb-2">Pilih filter "Semua Status" dan atur "Tahun Pendaftaran". Klik tombol <strong class="bg-blue-100 px-1 rounded">Backup Terpilih</strong> untuk mengunduh, atau klik <strong class="bg-red-100 text-red-600 px-1 rounded">Backup & Hapus</strong> jika Anda ingin mengunduh sekaligus menghapus file dari cloud Supabase agar menghemat kuota penyimpanan.</p>
+                            <p class="text-xs text-blue-600 italic">* File ZIP akan tersusun rapi menggunakan format: [Nama Siswa]_[NISN] / nama_file.pdf</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= VIEW PENGATURAN WEB ================= -->
+                <div id="content-pengaturan" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-1">Pengaturan Tampilan Website</h2>
+                            <p class="text-gray-600 text-sm">Ubah gambar latar belakang dan brosur website tanpa coding.</p>
+                        </div>
+                    </div>
+                    
+                    <div id="loading-pengaturan" class="text-center py-20 text-gray-500 animate-pulse hidden">
+                        <ion-icon name="sync-outline" class="text-4xl animate-spin"></ion-icon>
+                        <p class="mt-2">Memuat Pengaturan...</p>
+                    </div>
+
+                    <form id="form-pengaturan" class="bg-white rounded-3xl p-6 md:p-8 shadow-lg border border-gray-100" onsubmit="savePengaturanWeb(event)">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Background Home</h4>
+                                <span id="label-bg_home" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-bg_home" src="" class="w-full h-32 object-cover rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-bg_home" accept="image/*" onchange="previewSelectedImage(this, 'preview-bg_home', 'label-bg_home')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Background PPDB</h4>
+                                <span id="label-bg_ppdb" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-bg_ppdb" src="" class="w-full h-32 object-cover rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-bg_ppdb" accept="image/*" onchange="previewSelectedImage(this, 'preview-bg_ppdb', 'label-bg_ppdb')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Background Profil</h4>
+                                <span id="label-bg_profil" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-bg_profil" src="" class="w-full h-32 object-cover rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-bg_profil" accept="image/*" onchange="previewSelectedImage(this, 'preview-bg_profil', 'label-bg_profil')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Brosur 1 (PPDB)</h4>
+                                <span id="label-brosur_1" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-brosur_1" src="" class="w-full h-40 object-contain rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-brosur_1" accept="image/*" onchange="previewSelectedImage(this, 'preview-brosur_1', 'label-brosur_1')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Brosur 2 (PPDB)</h4>
+                                <span id="label-brosur_2" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-brosur_2" src="" class="w-full h-40 object-contain rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-brosur_2" accept="image/*" onchange="previewSelectedImage(this, 'preview-brosur_2', 'label-brosur_2')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                <h4 class="font-bold text-gray-800 mb-2">Brosur Seragam (PPDB)</h4>
+                                <span id="label-brosur_3" class="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1 hidden">Gambar Saat Ini:</span>
+                                <img id="preview-brosur_3" src="" class="w-full h-40 object-contain rounded-xl mb-3 hidden bg-gray-100 border border-gray-300 shadow-inner">
+                                <input type="file" id="input-brosur_3" accept="image/*" onchange="previewSelectedImage(this, 'preview-brosur_3', 'label-brosur_3')" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-green-50 file:text-[#27AE60] hover:file:bg-green-100 transition mt-auto">
+                            </div>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+                            <button type="submit" id="btn-save-pengaturan" class="bg-[#27AE60] text-white px-8 py-3 rounded-xl hover:bg-green-700 transition flex items-center gap-2 font-bold shadow-lg">
+                                <ion-icon name="save-outline" class="text-xl"></ion-icon> Simpan Pengaturan
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
             </main>
         </div>
@@ -363,6 +509,10 @@
                             <option value="diterima">Diterima</option>
                             <option value="ditolak">Ditolak</option>
                         </select>
+                        <div class="mt-4">
+                            <label class="block text-[#27AE60] text-sm mb-2 font-bold uppercase tracking-wider">Catatan Admin <span class="text-gray-400 text-xs capitalize normal-case">(Opsional)</span></label>
+                            <textarea id="edit-catatan" rows="2" placeholder="Contoh: File KK buram, mohon upload ulang via WA..." class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800 resize-none"></textarea>
+                        </div>
                     </div>
 
                     <div>
@@ -394,8 +544,8 @@
                                 <input type="date" id="edit-tanggal-lahir" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800" required>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-gray-600 text-sm mb-1">NISN</label>
-                                <input type="text" id="edit-nisn" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800">
+                            <label class="block text-gray-600 text-sm mb-1">NISN</label>
+                            <input type="text" id="edit-nisn" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-gray-600 text-sm mb-1">Alamat Lengkap *</label>
@@ -411,14 +561,14 @@
                             <div><label class="block text-gray-600 text-sm mb-1">Nama Ibu *</label><input type="text" id="edit-ibu" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800" required></div>
                             <div><label class="block text-gray-600 text-sm mb-1">Pekerjaan Ayah</label><input type="text" id="edit-kerja-ayah" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800"></div>
                             <div><label class="block text-gray-600 text-sm mb-1">Pekerjaan Ibu</label><input type="text" id="edit-kerja-ibu" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800"></div>
-                            <div class="md:col-span-2"><label class="block text-gray-600 text-sm mb-1">No HP Orang Tua / WA *</label><input type="tel" id="edit-nohp-ortu" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800" required></div>
+                        <div class="md:col-span-2"><label class="block text-gray-600 text-sm mb-1">No HP Orang Tua / WA *</label><input type="tel" id="edit-nohp-ortu" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800" required></div>
                         </div>
                     </div>
 
                     <div>
                         <h4 class="text-purple-500 font-bold border-b border-gray-200 pb-2 mb-4 flex items-center gap-2"><ion-icon name="call-outline"></ion-icon> Kontak Siswa</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-gray-600 text-sm mb-1">No HP Siswa</label><input type="tel" id="edit-nohp-siswa" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800"></div>
+                        <div><label class="block text-gray-600 text-sm mb-1">No HP Siswa</label><input type="tel" id="edit-nohp-siswa" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800"></div>
                             <div><label class="block text-gray-600 text-sm mb-1">Email</label><input type="email" id="edit-email-siswa" class="w-full bg-white border border-gray-300 px-4 py-2.5 rounded-xl focus:border-[#27AE60] outline-none transition text-gray-800"></div>
                         </div>
                     </div>

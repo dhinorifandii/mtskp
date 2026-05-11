@@ -58,7 +58,7 @@
       </nav>
     </header>
 
-    <section class="relative bg-[url('Assets/img/kegiatan.jpeg')] bg-cover bg-center h-[35vh] md:h-[50vh] flex items-center justify-center text-white">
+    <section id="hero-bg-ppdb" class="relative bg-[url('Assets/img/kegiatan.jpeg')] bg-cover bg-center h-[35vh] md:h-[50vh] flex items-center justify-center text-white">
       <div class="absolute inset-0 bg-black/60"></div>
       <div class="relative z-10 text-center px-6 animate__animated animate__fadeInDown">
         <span class="bg-[#27AE60] text-white px-4 py-1 rounded-full text-xs md:text-sm font-bold mb-4 inline-block">Tahun Ajaran 2026/2027</span>
@@ -75,17 +75,17 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             <div class="group bg-white p-3 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300">
               <div class="overflow-hidden rounded-xl">
-                <img src="Assets/img/brosur.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Brosur 1" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
+                <img id="img-brosur-1" src="Assets/img/brosur.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Brosur 1" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
               </div>
             </div>
             <div class="group bg-white p-3 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300">
               <div class="overflow-hidden rounded-xl">
-                <img src="Assets/img/brosur2.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Brosur 2" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
+                <img id="img-brosur-2" src="Assets/img/brosur2.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Brosur 2" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
               </div>
             </div>
             <div class="group bg-white p-3 rounded-2xl shadow-md border border-gray-100 hover:shadow-2xl transition duration-300">
               <div class="overflow-hidden rounded-xl">
-                <img src="Assets/img/seragam.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Seragam" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
+                <img id="img-brosur-3" src="Assets/img/seragam.jpeg" onerror="this.src='https://placehold.co/600x800/png?text=Brosur+Belum+Diupload'" alt="Seragam" class="w-full h-auto cursor-pointer group-hover:scale-105 transition duration-500" onclick="openLightbox(this)">
               </div>
             </div>
           </div>
@@ -178,7 +178,7 @@
         <section id="papan-pengumuman" class="mb-20">
           <div class="text-center mb-10">
             <h2 class="text-2xl md:text-4xl font-extrabold text-gray-800 mb-2">Papan Pengumuman Kelulusan</h2>
-            <p class="text-[#27AE60] font-medium">Daftar Calon Peserta Didik Baru yang dinyatakan <span class="font-bold">DITERIMA</span>.</p>
+            <p class="text-gray-600 font-medium">Daftar Calon Peserta Didik Baru yang dinyatakan <span class="font-bold text-[#27AE60]">DITERIMA</span> dan <span class="font-bold text-red-500">TIDAK DITERIMA</span>.</p>
           </div>
           <div id="announcement-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 max-w-4xl mx-auto">
               <p id="announcement-date" class="text-center text-sm text-gray-500 mb-6">Memuat data...</p>
@@ -234,8 +234,8 @@
                     <input type="date" id="tanggal_lahir" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] focus:ring-1 focus:ring-[#27AE60] transition-all" required>
                   </div>
                   <div class="md:col-span-2">
-                    <label class="block text-gray-600 text-sm mb-1">NISN <span class="text-xs text-gray-500">(Opsional)</span></label>
-                    <input type="text" id="nisn" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all">
+                  <label class="block text-gray-600 text-sm mb-1">NISN (10 Digit) *</label>
+                  <input type="text" id="nisn" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Contoh: 0123456789" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all" required>
                   </div>
                   <div class="md:col-span-2">
                     <label class="block text-gray-600 text-sm mb-1">Alamat Lengkap *</label>
@@ -267,7 +267,7 @@
                   </div>
                   <div class="md:col-span-2">
                     <label class="block text-gray-600 text-sm mb-1">No HP Orang Tua / Wali (WA) *</label>
-                    <input type="tel" id="no_hp_ortu" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all" required>
+                    <input type="tel" id="no_hp_ortu" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all" required>
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-gray-600 text-sm mb-1">No HP Siswa <span class="text-xs text-gray-500">(Opsional)</span></label>
-                    <input type="tel" id="no_hp_siswa" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all">
+                    <input type="tel" id="no_hp_siswa" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl focus:outline-none focus:border-[#27AE60] transition-all">
                   </div>
                   <div>
                     <label class="block text-gray-600 text-sm mb-1">Email <span class="text-xs text-gray-500">(Opsional)</span></label>
@@ -336,6 +336,13 @@
                 <div id="upload-progress" class="absolute top-0 left-0 h-full bg-green-800/50 transition-all duration-300" style="width: 0%;"></div>
                 <span id="btn-submit-text" class="relative z-10 flex items-center gap-2">Kirim Pendaftaran <ion-icon name="checkmark-done-outline"></ion-icon></span>
               </button>
+          
+          <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+            <p class="text-gray-600 mb-3">Sudah pernah mendaftar? Pantau status kelulusan atau perbaiki data Anda.</p>
+            <a href="portal-siswa.html" class="inline-flex items-center gap-2 text-[#27AE60] font-bold hover:text-green-700 transition hover:underline">
+              <ion-icon name="log-in-outline" class="text-xl"></ion-icon> Masuk ke Portal Siswa
+            </a>
+          </div>
             </form>
 
           </div>

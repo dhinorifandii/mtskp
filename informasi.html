@@ -252,7 +252,7 @@
           <h2 class="text-2xl md:text-3xl font-bold text-[#27AE60] mb-8 text-center uppercase tracking-wider">Papan Pengumuman</h2>
           
           <div class="text-center mb-6">
-            <p class="text-gray-600 font-medium">Daftar Calon Peserta Didik Baru yang dinyatakan <span class="font-bold text-[#27AE60]">DITERIMA</span>.</p>
+            <p class="text-gray-600 font-medium">Daftar Calon Peserta Didik Baru yang dinyatakan <span class="font-bold text-[#27AE60]">DITERIMA</span> dan <span class="font-bold text-red-500">TIDAK DITERIMA</span>.</p>
           </div>
           <div id="announcement-container" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 max-w-4xl mx-auto">
               <p id="announcement-date" class="text-center text-sm text-gray-500 mb-6">Memuat data...</p>
@@ -339,8 +339,27 @@
                   .eq('id', 1)
                   .single();
   
-              // Jika error atau data siswa kosong
-              if (error || !data || !data.data_kelulusan || data.data_kelulusan.students.length === 0) {
+              let diterima = [];
+              let ditolak = [];
+              let publishedAt = null;
+              
+              if (data && data.data_kelulusan) {
+                  let parsedData = data.data_kelulusan;
+                  // Fallback otomatis jika data dari Supabase berupa string text
+                  if (typeof parsedData === 'string') {
+                      try { parsedData = JSON.parse(parsedData); } catch (e) {}
+                  }
+
+                  if (parsedData.students) {
+                      diterima = parsedData.students; // Old format fallback
+                  } else {
+                      diterima = parsedData.diterima || [];
+                      ditolak = parsedData.ditolak || [];
+                  }
+                  publishedAt = parsedData.published_at;
+              }
+
+              if (error || (diterima.length === 0 && ditolak.length === 0)) {
                   if (error && error.code !== 'PGRST116') throw error;
                   mainContainer.classList.add('text-center');
                   dateEl.classList.add('hidden');
@@ -349,21 +368,45 @@
                   return;
               }
   
-              const students = data.data_kelulusan.students;
-              const publishedDate = new Date(data.data_kelulusan.published_at);
+              const publishedDate = new Date(publishedAt);
   
               dateEl.textContent = `Diterbitkan pada: ${publishedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB`;
               
               container.innerHTML = ''; 
-              students.forEach((student, index) => {
-                  const studentItem = document.createElement('div');
-                  studentItem.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 hover:shadow-md transition';
-                  studentItem.innerHTML = `
-                      <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#27AE60]/10 text-[#27AE60] flex items-center justify-center font-bold text-sm">${index + 1}</div>
-                      <span class="font-medium text-gray-700">${student}</span>
-                  `;
-                  container.appendChild(studentItem);
-              });
+              
+              if (diterima.length > 0) {
+                  const headerDiterima = document.createElement('div');
+                  headerDiterima.className = 'col-span-full mt-2 mb-2 font-bold text-[#27AE60] text-lg border-b border-green-200 pb-1';
+                  headerDiterima.textContent = 'DITERIMA';
+                  container.appendChild(headerDiterima);
+                  
+                  diterima.forEach((student, index) => {
+                      const studentItem = document.createElement('div');
+                      studentItem.className = 'flex items-center gap-3 bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition';
+                      studentItem.innerHTML = `
+                          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-200 text-green-700 flex items-center justify-center font-bold text-sm">${index + 1}</div>
+                          <span class="font-medium text-gray-700">${student}</span>
+                      `;
+                      container.appendChild(studentItem);
+                  });
+              }
+
+              if (ditolak.length > 0) {
+                  const headerDitolak = document.createElement('div');
+                  headerDitolak.className = 'col-span-full mt-6 mb-2 font-bold text-red-500 text-lg border-b border-red-200 pb-1';
+                  headerDitolak.textContent = 'TIDAK DITERIMA';
+                  container.appendChild(headerDitolak);
+                  
+                  ditolak.forEach((student, index) => {
+                      const studentItem = document.createElement('div');
+                      studentItem.className = 'flex items-center gap-3 bg-red-50 p-3 rounded-lg border border-red-100 hover:shadow-md transition';
+                      studentItem.innerHTML = `
+                          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-red-200 text-red-700 flex items-center justify-center font-bold text-sm">${index + 1}</div>
+                          <span class="font-medium text-gray-700">${student}</span>
+                      `;
+                      container.appendChild(studentItem);
+                  });
+              }
   
           } catch (err) {
               console.error('Error loading announcements:', err);

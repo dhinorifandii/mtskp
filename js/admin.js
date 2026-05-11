@@ -12,6 +12,11 @@ let rowsPerPage = 20; // Menentukan jumlah data per halaman
 let filteredDataList = [];
 let selectedIds = []; // Menyimpan ID baris yang dicentang
 
+// State khusus untuk Backup
+let backupDataList = [];
+let filteredBackupList = [];
+let selectedBackupIds = [];
+
 // === UI & SIDEBAR ===
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -379,6 +384,7 @@ function openModal(id = null) {
         const item = allData.find(d => d.id === id);
         if (item) {
             document.getElementById('edit-status').value = item.status;
+            document.getElementById('edit-catatan').value = item.catatan_admin || '';
             document.getElementById('edit-nama').value = item.nama;
             document.getElementById('edit-jk').value = item.jenis_kelamin;
             document.getElementById('edit-agama').value = item.agama;
@@ -408,6 +414,7 @@ function openModal(id = null) {
         modalTitle.innerHTML = `<ion-icon name="person-add-outline"></ion-icon> <span>Tambah Pendaftar</span>`;
         form.reset();
         document.getElementById('edit-status').value = 'pending';
+        document.getElementById('edit-catatan').value = '';
 
         // Sembunyikan preview link karena ini data baru
         setupEditBerkasView('ktp', null);
@@ -457,6 +464,7 @@ document.getElementById('admin-form').addEventListener('submit', async (e) => {
 
         const payload = {
             status: document.getElementById('edit-status').value,
+            catatan_admin: document.getElementById('edit-catatan').value,
             nama: document.getElementById('edit-nama').value,
             jenis_kelamin: document.getElementById('edit-jk').value,
             agama: document.getElementById('edit-agama').value,
@@ -635,18 +643,21 @@ async function publishAnnouncements() {
             // 1. Fetch accepted students
             const { data: acceptedStudents, error: fetchError } = await supabaseClient
                 .from('ppdb')
-                .select('nama')
-                .eq('status', 'diterima')
+                .select('nama, status')
+                .in('status', ['diterima', 'ditolak'])
                 .order('nama', { ascending: true });
 
             if (fetchError) throw fetchError;
 
             // 2. Prepare the payload
-            const studentNames = acceptedStudents.map(s => s.nama);
+            const diterima = acceptedStudents.filter(s => s.status === 'diterima').map(s => s.nama);
+            const ditolak = acceptedStudents.filter(s => s.status === 'ditolak').map(s => s.nama);
+            
             const payload = {
                 id: 1, // Always update the same row
                 data_kelulusan: {
-                    students: studentNames,
+                    diterima: diterima,
+                    ditolak: ditolak,
                     published_at: new Date().toISOString()
                 }
             };
@@ -868,20 +879,28 @@ function switchView(viewName) {
     const btnGal = document.getElementById('menu-galeri');
     const btnBerita = document.getElementById('menu-berita');
     const btnSertifikat = document.getElementById('menu-sertifikat');
+    const btnBackup = document.getElementById('menu-backup');
+    const btnPengaturan = document.getElementById('menu-pengaturan');
     const viewDash = document.getElementById('content-dashboard');
     const viewGal = document.getElementById('content-galeri');
     const viewBerita = document.getElementById('content-berita');
     const viewSertifikat = document.getElementById('content-sertifikat');
+    const viewBackup = document.getElementById('content-backup');
+    const viewPengaturan = document.getElementById('content-pengaturan');
 
     // Reset Class
     btnDash.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
     btnGal.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
     btnBerita.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
     btnSertifikat.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
+    btnBackup.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
+    if(btnPengaturan) btnPengaturan.className = "flex items-center gap-3 px-4 py-3 border-l-4 border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-r-xl font-bold transition";
     viewDash.classList.add('hidden');
     viewGal.classList.add('hidden');
     viewBerita.classList.add('hidden');
     viewSertifikat.classList.add('hidden');
+    viewBackup.classList.add('hidden');
+    if(viewPengaturan) viewPengaturan.classList.add('hidden');
 
     // Set Active
     if (viewName === 'dashboard') {
@@ -899,6 +918,14 @@ function switchView(viewName) {
         btnSertifikat.className = "flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-yellow-500/20 to-transparent border-l-4 border-yellow-500 text-yellow-600 rounded-r-xl font-bold transition";
         viewSertifikat.classList.remove('hidden');
         loadSertifikatAdmin(); // Load data sertifikat
+    } else if (viewName === 'backup') {
+        btnBackup.className = "flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-500/20 to-transparent border-l-4 border-purple-500 text-purple-600 rounded-r-xl font-bold transition";
+        viewBackup.classList.remove('hidden');
+        loadBackupAdmin(); // Load data arsip
+    } else if (viewName === 'pengaturan') {
+        if(btnPengaturan) btnPengaturan.className = "flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500/20 to-transparent border-l-4 border-blue-500 text-blue-600 rounded-r-xl font-bold transition";
+        if(viewPengaturan) viewPengaturan.classList.remove('hidden');
+        loadPengaturanWeb();
     }
 
     if (window.innerWidth < 768) toggleSidebar(); // Tutup sidebar di HP
@@ -1222,6 +1249,8 @@ async function loadSertifikatAdmin() {
         return; 
     }
 
+    tbody.innerHTML = ''; // Kosongkan skeleton loading sebelum merender data asli
+
     filteredData.forEach(item => {
         const date = new Date(item.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year:'numeric'});
         tbody.innerHTML += `
@@ -1326,3 +1355,392 @@ async function deleteSertifikat(id) {
         }
     }
 }
+
+// ==========================================
+// 11. SISTEM BACKUP & ARSIP BERKAS PPDB
+// ==========================================
+
+async function loadBackupAdmin() {
+    // Gunakan allData yang sudah diload dari fungsi Dashboard
+    if (allData.length === 0) await loadData();
+    
+    backupDataList = allData.map(item => {
+        let fileCount = 0;
+        if (item.berkas_ktp) fileCount++;
+        if (item.berkas_kk) fileCount++;
+        if (item.berkas_akta) fileCount++;
+        if (item.berkas_ijazah) fileCount++;
+        
+        return {
+            ...item,
+            year: new Date(item.created_at).getFullYear().toString(),
+            fileCount: fileCount
+        };
+    });
+
+    // Extract unique years for the filter dropdown
+    const years = [...new Set(backupDataList.map(item => item.year))].sort((a, b) => b - a);
+    const yearSelect = document.getElementById('filter-year-backup');
+    
+    // Reset options but keep "Semua Tahun"
+    yearSelect.innerHTML = '<option value="all">Semua Tahun</option>';
+    years.forEach(year => {
+        yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+    });
+
+    applyBackupFilters();
+}
+
+function applyBackupFilters() {
+    const keyword = document.getElementById('search-backup').value.toLowerCase();
+    const year = document.getElementById('filter-year-backup').value;
+    const status = document.getElementById('filter-status-backup').value;
+
+    filteredBackupList = backupDataList.filter(item => {
+        const matchName = item.nama.toLowerCase().includes(keyword) || (item.nisn && item.nisn.includes(keyword));
+        const matchYear = year === 'all' || item.year === year;
+        const matchStatus = status === 'all' || item.status === status;
+        return matchName && matchYear && matchStatus;
+    });
+
+    selectedBackupIds = [];
+    document.getElementById('backup-select-all').checked = false;
+    updateBackupCount();
+    renderBackupTable();
+}
+
+// Attach listeners
+document.getElementById('search-backup').addEventListener('input', applyBackupFilters);
+document.getElementById('filter-year-backup').addEventListener('change', applyBackupFilters);
+document.getElementById('filter-status-backup').addEventListener('change', applyBackupFilters);
+
+function toggleBackupSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.backup-row-checkbox');
+    selectedBackupIds = [];
+    checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+        if (source.checked) selectedBackupIds.push(cb.value);
+    });
+    updateBackupCount();
+}
+
+function toggleBackupRow(cb) {
+    if (cb.checked) {
+        if (!selectedBackupIds.includes(cb.value)) selectedBackupIds.push(cb.value);
+    } else {
+        selectedBackupIds = selectedBackupIds.filter(id => id !== cb.value);
+        document.getElementById('backup-select-all').checked = false;
+    }
+    updateBackupCount();
+}
+
+function updateBackupCount() {
+    document.getElementById('backup-selected-count').innerText = selectedBackupIds.length;
+}
+
+function renderBackupTable() {
+    const tbody = document.getElementById('backup-table');
+    tbody.innerHTML = '';
+
+    if (filteredBackupList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">Tidak ada data arsip yang sesuai filter.</td></tr>`;
+        return;
+    }
+
+    filteredBackupList.forEach(item => {
+        const badgeColors = {
+            'diterima': 'text-green-600 bg-green-100',
+            'ditolak': 'text-red-600 bg-red-100',
+            'pending': 'text-yellow-600 bg-yellow-100'
+        };
+        
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                <td class="px-4 py-3 text-center">
+                    <input type="checkbox" class="backup-row-checkbox w-4 h-4 cursor-pointer accent-purple-600" value="${item.id}" onchange="toggleBackupRow(this)">
+                </td>
+                <td class="px-6 py-3 font-bold text-gray-800 whitespace-nowrap">${item.nama}</td>
+                <td class="px-6 py-3 text-gray-600 font-mono tracking-wider">${item.nisn || '-'}</td>
+                <td class="px-6 py-3 text-gray-600">${item.year}</td>
+                <td class="px-6 py-3"><span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeColors[item.status] || ''}">${item.status}</span></td>
+                <td class="px-6 py-3 text-center font-bold ${item.fileCount === 0 ? 'text-red-400' : 'text-purple-600'}">${item.fileCount} File</td>
+            </tr>`;
+    });
+}
+
+function sanitizeFilename(name) {
+    return name.replace(/[^a-zA-Z0-9 \-_]/g, '').trim();
+}
+
+function getStoragePathFromUrl(url) {
+    if (!url) return null;
+    try {
+        const parts = url.split('/berkas_ppdb/');
+        return parts.length > 1 ? decodeURIComponent(parts[1]) : null;
+    } catch (e) { return null; }
+}
+
+async function startBackupProcess(deleteAfter = false) {
+    if (selectedBackupIds.length === 0) {
+        showToast("Pilih minimal 1 siswa untuk dibackup!", "error");
+        return;
+    }
+    if (selectedBackupIds.length > 100) {
+        showToast("Maksimal 100 siswa per backup agar browser tidak crash.", "error");
+        return;
+    }
+
+    const textWarning = deleteAfter 
+        ? "Seluruh berkas dari siswa terpilih akan di-download lalu <b>DIHAPUS PERMANEN</b> dari server Supabase. Lanjutkan?"
+        : "Berkas siswa akan di-compress menjadi ZIP dan di-download.";
+
+    const result = await Swal.fire({
+        title: 'Konfirmasi Backup',
+        html: textWarning,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: deleteAfter ? '#EF4444' : '#2563EB',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: deleteAfter ? 'Ya, Backup & Hapus!' : 'Ya, Mulai Backup'
+    });
+
+    if (!result.isConfirmed) return;
+
+    Swal.fire({
+        title: 'Memproses Arsip Backup...',
+        html: `<div id="swal-backup-text" class="text-sm font-semibold text-gray-600 mb-2 mt-4">Mempersiapkan File...</div>
+               <div class="w-full bg-gray-200 rounded-full h-3"><div id="swal-backup-bar" class="bg-purple-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div></div>`,
+        allowOutsideClick: false,
+        showConfirmButton: false
+    });
+
+    const textEl = document.getElementById('swal-backup-text');
+    const barEl = document.getElementById('swal-backup-bar');
+    
+    try {
+        const zip = new JSZip();
+        const studentsToBackup = backupDataList.filter(s => selectedBackupIds.includes(s.id));
+        
+        let filesProcessed = 0;
+        let totalFiles = studentsToBackup.reduce((acc, curr) => acc + curr.fileCount, 0);
+
+        if (totalFiles === 0) {
+            Swal.fire('Info', 'Siswa yang dipilih tidak memiliki berkas yang dilampirkan.', 'info');
+            return;
+        }
+
+        // 1. Download Files and Add to ZIP
+        for (const student of studentsToBackup) {
+            if (student.fileCount === 0) continue;
+            
+            const folderName = `${sanitizeFilename(student.nama)}_${student.nisn || 'NONISN'}`;
+            const folder = zip.folder(folderName);
+            const filesToGet = [
+                { type: 'KTP', url: student.berkas_ktp },
+                { type: 'KK', url: student.berkas_kk },
+                { type: 'AKTA', url: student.berkas_akta },
+                { type: 'IJAZAH', url: student.berkas_ijazah }
+            ];
+
+            for (const file of filesToGet) {
+                if (!file.url) continue;
+                
+                const storagePath = getStoragePathFromUrl(file.url);
+                if (storagePath) {
+                    textEl.innerText = `Mengunduh berkas ${student.nama.substring(0,10)}...`;
+                    
+                    const { data: blob, error } = await supabaseClient.storage.from('berkas_ppdb').download(storagePath);
+                    if (!error && blob) {
+                        const extension = storagePath.split('.').pop();
+                        folder.file(`${file.type}_${student.nisn || 'NONISN'}.${extension}`, blob);
+                    } else {
+                        console.warn(`Gagal mengunduh ${file.type} milik ${student.nama}:`, error);
+                    }
+                }
+                filesProcessed++;
+                barEl.style.width = `${Math.round((filesProcessed / totalFiles) * 80)}%`; // 0% to 80% is downloading
+            }
+        }
+
+        // 2. Generate ZIP
+        textEl.innerText = `Mengkompresi ke dalam bentuk ZIP... Mohon jangan tutup halaman.`;
+        const zipBlob = await zip.generateAsync({ type: "blob" }, function updateCallback(metadata) {
+            barEl.style.width = `${80 + Math.round(metadata.percent * 0.2)}%`; // 80% to 100% is zipping
+        });
+
+        // 3. Trigger Download
+        const dateStr = new Date().toISOString().split('T')[0];
+        saveAs(zipBlob, `Backup_PPDB_${dateStr}.zip`);
+
+        // 4. (Opsional) Hapus file dari server jika admin mencentang "Backup & Hapus"
+        if (deleteAfter) {
+            textEl.innerText = `Backup selesai. Menghapus berkas dari server...`;
+            
+            let pathsToDelete = [];
+            for (const student of studentsToBackup) {
+                [student.berkas_ktp, student.berkas_kk, student.berkas_akta, student.berkas_ijazah].forEach(url => {
+                    const path = getStoragePathFromUrl(url);
+                    if(path) pathsToDelete.push(path);
+                });
+            }
+
+            if (pathsToDelete.length > 0) {
+                await supabaseClient.storage.from('berkas_ppdb').remove(pathsToDelete);
+                
+                // Hapus URL dari database
+                await supabaseClient.from('ppdb').update({ 
+                    berkas_ktp: null, berkas_kk: null, berkas_akta: null, berkas_ijazah: null 
+                }).in('id', selectedBackupIds);
+            }
+        }
+
+        // 5. Catat log backup ke database
+        // CATATAN: Pastikan Anda membuat tabel "backup_logs" di Supabase dengan field: id, total_siswa, total_file, is_deleted, created_at
+        try {
+            await supabaseClient.from('backup_logs').insert([{
+                total_siswa: studentsToBackup.length,
+                total_file: totalFiles,
+                is_deleted: deleteAfter
+            }]);
+        } catch(e) { console.warn("Tabel backup_logs belum dibuat di Supabase, tapi backup tetap berhasil.") }
+
+        Swal.fire({
+            title: 'Selesai!',
+            text: deleteAfter ? `Backup ZIP berhasil diunduh dan ${totalFiles} file telah dihapus dari server cloud.` : `Backup ZIP berhasil diunduh.`,
+            icon: 'success'
+        });
+        
+        if(deleteAfter) loadData(); // Reload seluruh data baru jika dihapus
+        
+    } catch (error) {
+        console.error("Backup Error:", error);
+        Swal.fire('Gagal!', `Terjadi kesalahan saat memproses backup: ${error.message}`, 'error');
+    }
+}
+
+// ==========================================
+// 12. SISTEM PENGATURAN WEB DINAMIS
+// ==========================================
+async function loadPengaturanWeb() {
+    document.getElementById('loading-pengaturan').classList.remove('hidden');
+    document.getElementById('form-pengaturan').classList.add('hidden');
+
+    const { data, error } = await supabaseClient.from('pengaturan_web').select('*').eq('id', 1).maybeSingle();
+
+    document.getElementById('loading-pengaturan').classList.add('hidden');
+    document.getElementById('form-pengaturan').classList.remove('hidden');
+
+    // Daftar gambar bawaan sistem (default) yang saat ini dipakai di web
+    const defaults = {
+        bg_home: 'Assets/img/bgfix.jpeg',
+        bg_ppdb: 'Assets/img/kegiatan.jpeg',
+        bg_profil: 'Assets/img/kegiatan3.jpeg',
+        brosur_1: 'Assets/img/brosur.jpeg',
+        brosur_2: 'Assets/img/brosur2.jpeg',
+        brosur_3: 'Assets/img/seragam.jpeg'
+    };
+
+    if (data && !error) {
+        setupPreviewPengaturan('bg_home', data.bg_home, defaults.bg_home);
+        setupPreviewPengaturan('bg_ppdb', data.bg_ppdb, defaults.bg_ppdb);
+        setupPreviewPengaturan('bg_profil', data.bg_profil, defaults.bg_profil);
+        setupPreviewPengaturan('brosur_1', data.brosur_1, defaults.brosur_1);
+        setupPreviewPengaturan('brosur_2', data.brosur_2, defaults.brosur_2);
+        setupPreviewPengaturan('brosur_3', data.brosur_3, defaults.brosur_3);
+    } else {
+        // Jika admin belum membuat baris ID 1 di tabel Supabase, buatkan otomatis
+        await supabaseClient.from('pengaturan_web').insert([{ id: 1 }]);
+        
+        // Tampilkan gambar default
+        setupPreviewPengaturan('bg_home', null, defaults.bg_home);
+        setupPreviewPengaturan('bg_ppdb', null, defaults.bg_ppdb);
+        setupPreviewPengaturan('bg_profil', null, defaults.bg_profil);
+        setupPreviewPengaturan('brosur_1', null, defaults.brosur_1);
+        setupPreviewPengaturan('brosur_2', null, defaults.brosur_2);
+        setupPreviewPengaturan('brosur_3', null, defaults.brosur_3);
+    }
+}
+
+function setupPreviewPengaturan(id, dbUrl, defaultUrl) {
+    const img = document.getElementById(`preview-${id}`);
+    const label = document.getElementById(`label-${id}`);
+    
+    // Gunakan URL dari Supabase jika ada, jika kosong gunakan default bawaan
+    const activeUrl = dbUrl ? dbUrl : defaultUrl;
+    
+    if (img && activeUrl) {
+        img.src = activeUrl;
+        img.classList.remove('hidden');
+        if (label) {
+            label.classList.remove('hidden');
+            label.innerText = dbUrl ? "Gambar Saat Ini (Diubah):" : "Gambar Saat Ini (Bawaan):";
+            label.className = "text-[10px] uppercase font-bold tracking-wider mb-1 block text-gray-500";
+        }
+    }
+}
+
+window.previewSelectedImage = function(input, previewId, labelId) {
+    const preview = document.getElementById(previewId);
+    const label = document.getElementById(labelId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+            if(label) {
+                label.classList.remove('hidden');
+                label.innerText = "Preview Gambar Baru:";
+                label.className = "text-[10px] uppercase font-bold tracking-wider mb-1 block text-blue-500";
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function uploadAssetsWeb(fileElementId) {
+    const fileInput = document.getElementById(fileElementId);
+    if (!fileInput || fileInput.files.length === 0) return null;
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `web_${Date.now()}_${Math.random().toString(36).substring(2,8)}.${fileExt}`;
+    // Kita menggunakan bucket yang sudah ada dari galeri agar file menjadi format publik
+    const { error } = await supabaseClient.storage.from('galeri_sekolah').upload(fileName, file);
+    if (error) throw error;
+    const { data } = supabaseClient.storage.from('galeri_sekolah').getPublicUrl(fileName);
+    return data.publicUrl;
+}
+
+window.savePengaturanWeb = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-pengaturan');
+    btn.innerHTML = `<ion-icon name="sync" class="animate-spin"></ion-icon> Menyimpan...`;
+    btn.disabled = true;
+
+    try {
+        let payload = {};
+        const fields = ['bg_home', 'bg_ppdb', 'bg_profil', 'brosur_1', 'brosur_2', 'brosur_3'];
+
+        for (const field of fields) {
+            const url = await uploadAssetsWeb(`input-${field}`);
+            if (url) payload[field] = url; // Hanya simpan jika admin mengunggah file baru di kotak tersebut
+        }
+
+        if (Object.keys(payload).length > 0) {
+            // Gunakan fungsi UPDATE agar tidak menimpa kolom gambar lain menjadi kosong
+            const { error } = await supabaseClient.from('pengaturan_web').update(payload).eq('id', 1);
+            if (error) throw error;
+            showToast("Pengaturan web berhasil diperbarui!", "success");
+            
+            // Refresh form
+            document.getElementById('form-pengaturan').reset();
+            loadPengaturanWeb();
+        } else {
+            showToast("Tidak ada gambar baru yang dipilih", "info");
+        }
+    } catch (error) {
+        showToast("Terjadi kesalahan: " + error.message, "error");
+    } finally {
+        btn.innerHTML = `<ion-icon name="save-outline" class="text-xl"></ion-icon> Simpan Pengaturan`;
+        btn.disabled = false;
+    }
+};

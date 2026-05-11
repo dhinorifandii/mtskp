@@ -180,3 +180,54 @@ function closeLightbox() {
     }
   }
 }
+
+// ===============================================
+// 5. PENGATURAN WEB DINAMIS (DARI SUPABASE)
+// ===============================================
+document.addEventListener("DOMContentLoaded", async () => {
+  // Setup Supabase Client secara aman jika belum ada
+  let client = window.supabaseClient;
+  if (!client && typeof supabase !== 'undefined') {
+    const supabaseUrl = 'https://ejhmwxqbpmjkvudazjmc.supabase.co';
+    const supabaseKey = 'sb_publishable_pfloSKirXdrAE2lj7ygHNg_o-aMJPjz';
+    client = supabase.createClient(supabaseUrl, supabaseKey);
+  }
+
+  if (client) {
+    try {
+      const { data, error } = await client.from('pengaturan_web').select('*').eq('id', 1).maybeSingle();
+      if (data && !error) {
+        // Ambil elemen berdasarkan ID
+        const heroHome = document.getElementById('hero-bg-home');
+        const heroPpdb = document.getElementById('hero-bg-ppdb');
+        const heroProfil = document.getElementById('home'); // ID Home ada di halaman profil
+        
+        const brosur1 = document.getElementById('img-brosur-1');
+        const brosur2 = document.getElementById('img-brosur-2');
+        const brosur3 = document.getElementById('img-brosur-3');
+
+        // Fungsi helper untuk verifikasi gambar sebelum diterapkan
+        // Jika link mati/gagal dimuat, akan diabaikan dan tetap menggunakan foto bawaan sistem (fallback otomatis)
+        const applyImageSafe = (element, url, isBg = false) => {
+          if (!element || !url) return;
+          const tempImg = new Image();
+          tempImg.onload = () => {
+            if (isBg) { element.style.backgroundImage = `url('${url}')`; }
+            else { element.src = url; }
+          };
+          tempImg.src = url; // Memicu proses load, jika error (link tidak valid) tidak terjadi apa-apa
+        };
+
+        applyImageSafe(heroHome, data.bg_home, true);
+        applyImageSafe(heroPpdb, data.bg_ppdb, true);
+        if (window.location.pathname.includes('profil.html')) { applyImageSafe(heroProfil, data.bg_profil, true); }
+
+        applyImageSafe(brosur1, data.brosur_1, false);
+        applyImageSafe(brosur2, data.brosur_2, false);
+        applyImageSafe(brosur3, data.brosur_3, false);
+      }
+    } catch (e) {
+      console.warn("Gagal memuat pengaturan web dinamis:", e);
+    }
+  }
+});

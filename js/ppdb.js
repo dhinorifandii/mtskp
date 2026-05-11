@@ -168,7 +168,20 @@ async function submitPPDB(event) {
 
         if (error) throw error;
 
-        showNotification('success', 'Pendaftaran Berhasil!', 'Alhamdulillah, data Anda telah masuk ke sistem kami. Silakan tunggu informasi selanjutnya.');
+        // Memunculkan Notifikasi Custom yang mengarahkan ke Portal Siswa
+        Swal.fire({
+            icon: 'success',
+            title: 'Pendaftaran Berhasil!',
+            text: 'Alhamdulillah, data masuk ke sistem. Gunakan NISN dan Tanggal Lahir untuk memantau status secara berkala di Portal Siswa.',
+            showCancelButton: true,
+            confirmButtonText: 'Buka Portal Siswa',
+            cancelButtonText: 'Tutup',
+            confirmButtonColor: '#27AE60',
+            cancelButtonColor: '#6B7280'
+        }).then((result) => {
+            if (result.isConfirmed) { window.location.href = 'portal-siswa.html'; }
+        });
+        
         document.getElementById('form-ppdb').reset();
 
     } catch (error) {
@@ -253,7 +266,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .eq('id', 1)
                 .single();
 
-            if (error || !data || !data.data_kelulusan || data.data_kelulusan.students.length === 0) {
+            let diterima = [];
+            let ditolak = [];
+            let publishedAt = null;
+            
+            if (data && data.data_kelulusan) {
+                let parsedData = data.data_kelulusan;
+                // Fallback otomatis jika data dari Supabase berupa string text
+                if (typeof parsedData === 'string') {
+                    try { parsedData = JSON.parse(parsedData); } catch (e) {}
+                }
+
+                if (parsedData.students) {
+                    diterima = parsedData.students; // Old format fallback
+                } else {
+                    diterima = parsedData.diterima || [];
+                    ditolak = parsedData.ditolak || [];
+                }
+                publishedAt = parsedData.published_at;
+            }
+
+            if (error || (diterima.length === 0 && ditolak.length === 0)) {
                 if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
                    throw error;
                 }
@@ -264,21 +297,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const students = data.data_kelulusan.students;
-            const publishedDate = new Date(data.data_kelulusan.published_at);
+            const publishedDate = new Date(publishedAt);
 
             dateEl.textContent = `Diterbitkan pada: ${publishedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} WIB`;
             
             container.innerHTML = ''; // Clear loading state
-            students.forEach((student, index) => {
-                const studentItem = document.createElement('div');
-                studentItem.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-lg border';
-                studentItem.innerHTML = `
-                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-sm">${index + 1}</div>
-                    <span class="font-medium text-gray-700">${student}</span>
-                `;
-                container.appendChild(studentItem);
-            });
+            
+            if (diterima.length > 0) {
+                const headerDiterima = document.createElement('div');
+                headerDiterima.className = 'col-span-full mt-2 mb-2 font-bold text-[#27AE60] text-lg border-b border-green-200 pb-1';
+                headerDiterima.textContent = 'DITERIMA';
+                container.appendChild(headerDiterima);
+                
+                diterima.forEach((student, index) => {
+                    const studentItem = document.createElement('div');
+                    studentItem.className = 'flex items-center gap-3 bg-green-50 p-3 rounded-lg border border-green-100 hover:shadow-md transition';
+                    studentItem.innerHTML = `
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-200 text-green-700 flex items-center justify-center font-bold text-sm">${index + 1}</div>
+                        <span class="font-medium text-gray-700">${student}</span>
+                    `;
+                    container.appendChild(studentItem);
+                });
+            }
+
+            if (ditolak.length > 0) {
+                const headerDitolak = document.createElement('div');
+                headerDitolak.className = 'col-span-full mt-6 mb-2 font-bold text-red-500 text-lg border-b border-red-200 pb-1';
+                headerDitolak.textContent = 'TIDAK DITERIMA';
+                container.appendChild(headerDitolak);
+                
+                ditolak.forEach((student, index) => {
+                    const studentItem = document.createElement('div');
+                    studentItem.className = 'flex items-center gap-3 bg-red-50 p-3 rounded-lg border border-red-100 hover:shadow-md transition';
+                    studentItem.innerHTML = `
+                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-red-200 text-red-700 flex items-center justify-center font-bold text-sm">${index + 1}</div>
+                        <span class="font-medium text-gray-700">${student}</span>
+                    `;
+                    container.appendChild(studentItem);
+                });
+            }
 
         } catch (err) {
             console.error('Error loading announcements:', err);
