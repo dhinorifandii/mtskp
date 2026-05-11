@@ -48,7 +48,7 @@
           <ion-icon name="menu-outline"></ion-icon>
         </button>
 
-        <div id="menu" class="fixed inset-0 z-40 flex flex-col items-start space-y-8 p-[3rem] bg-[#27AE60] transform translate-x-[40%] transition-transform duration-300 md:ps-[3rem] md:pt-0 md:pb-0 md:pe-0 md:relative md:bg-transparent md:flex-row md:space-y-0 md:space-x-8 md:translate-x-0 md:flex md:inset-auto md:justify-end">
+        <div id="menu" class="fixed inset-0 z-40 flex flex-col items-start space-y-8 p-[3rem] bg-[#27AE60] transform translate-x-full transition-transform duration-300 md:ps-[3rem] md:pt-0 md:pb-0 md:pe-0 md:relative md:bg-transparent md:flex-row md:space-y-0 md:space-x-8 md:translate-x-0 md:flex md:inset-auto md:justify-end">
           <a href="index.html" onclick="closeMenu()" class="font-bold text-white hover:text-yellow-300 transition drop-shadow-md">Home</a>
           <a href="ppdb.html" onclick="closeMenu()" class="font-bold text-white hover:text-yellow-300 transition drop-shadow-md">PPDB</a>
           <a href="#" onclick="closeMenu()" class="font-bold text-yellow-300 transition drop-shadow-md border-b-2 border-yellow-300">Portal Siswa</a>
@@ -69,9 +69,9 @@
     <main class="flex-grow flex items-start justify-center px-4 relative z-10 -mt-16 sm:-mt-20 pb-20">
       
       <!-- 1. VIEW LOGIN -->
-      <div id="login-view" class="w-full max-w-lg bg-white p-8 md:p-10 rounded-3xl shadow-2xl border border-gray-100 text-center animate__animated animate__fadeInUp">
-        <div class="w-20 h-20 mx-auto bg-[#27AE60]/10 rounded-full flex items-center justify-center mb-6 shadow-inner">
-            <ion-icon name="person" class="text-4xl text-[#27AE60]"></ion-icon>
+      <div id="login-view" class="w-full max-w-lg bg-white p-6 sm:p-8 md:p-10 rounded-3xl shadow-2xl border border-gray-100 text-center animate__animated animate__fadeInUp">
+        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-[#27AE60]/10 rounded-full flex items-center justify-center mb-4 sm:mb-6 shadow-inner">
+            <ion-icon name="person" class="text-3xl sm:text-4xl text-[#27AE60]"></ion-icon>
         </div>
         <h2 class="text-2xl font-bold text-gray-800 mb-2">Masuk ke Portal</h2>
         <p class="text-gray-500 text-sm mb-8">Masukkan NISN yang Anda gunakan saat mendaftar.</p>
@@ -79,10 +79,10 @@
         <form id="login-form" class="space-y-6" onsubmit="event.preventDefault(); loginPortal();">
           <div class="relative">
             <ion-icon name="card" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
-            <input type="text" id="nisn-input" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="10 Digit NISN..." required class="w-full bg-gray-50 border border-gray-300 text-gray-800 px-12 py-4 rounded-xl focus:outline-none focus:border-[#27AE60] focus:ring-1 focus:ring-[#27AE60] transition font-mono tracking-widest text-center text-lg shadow-inner">
+            <input type="text" id="nisn-input" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="10 Digit NISN..." required class="w-full bg-gray-50 border border-gray-300 text-gray-800 px-10 sm:px-12 py-3 sm:py-4 rounded-xl focus:outline-none focus:border-[#27AE60] focus:ring-1 focus:ring-[#27AE60] transition font-mono tracking-widest text-center text-base sm:text-lg shadow-inner">
           </div>
           
-          <button type="submit" id="btn-login" class="w-full bg-[#27AE60] hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 text-lg active:scale-95">
+          <button type="submit" id="btn-login" class="w-full bg-[#27AE60] hover:bg-green-700 text-white font-bold py-3 sm:py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-2 text-base sm:text-lg active:scale-95">
             <ion-icon name="log-in-outline" class="text-xl"></ion-icon> Masuk Portal
           </button>
         </form>
@@ -93,14 +93,14 @@
           <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
               
               <!-- Header Dashboard -->
-              <div class="bg-gray-50 p-6 md:px-8 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                  <div class="flex items-center gap-4">
-                      <div class="w-12 h-12 rounded-full bg-[#27AE60]/10 flex items-center justify-center shadow-inner shrink-0">
+              <div class="bg-gray-50 p-5 sm:p-6 md:px-8 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+                  <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                      <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#27AE60]/10 flex items-center justify-center shadow-inner shrink-0">
                           <ion-icon name="person" class="text-2xl text-[#27AE60]"></ion-icon>
                       </div>
                       <div>
-                          <h2 class="text-xl font-bold text-gray-800">Halo, <span id="student-name-header"></span></h2>
-                          <p class="text-sm text-gray-500">No. Registrasi: <span id="student-reg-id" class="font-mono font-bold text-[#27AE60]"></span></p>
+                          <h2 class="text-lg sm:text-xl font-bold text-gray-800">Halo, <span id="student-name-header"></span></h2>
+                          <p class="text-xs sm:text-sm text-gray-500">No. Registrasi: <span id="student-reg-id" class="font-mono font-bold text-[#27AE60]"></span></p>
                       </div>
                   </div>
                   <button id="btn-logout" onclick="logoutPortal()" class="w-full sm:w-auto px-5 py-2.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border border-red-100 rounded-xl font-bold transition flex items-center justify-center gap-2">
@@ -108,19 +108,19 @@
                   </button>
               </div>
 
-              <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                   
                   <!-- KOLOM KIRI (Info & Timeline) -->
                   <div class="lg:col-span-2 space-y-8">
                       
                       <!-- Status Banner Real-time -->
-                      <div id="status-banner" class="p-6 rounded-2xl border-l-4 flex items-center gap-4 shadow-sm">
-                          <div id="status-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center shrink-0">
-                              <ion-icon id="status-icon" name="" class="text-2xl"></ion-icon>
+                      <div id="status-banner" class="p-4 sm:p-6 rounded-2xl border-l-4 flex items-center gap-3 sm:gap-4 shadow-sm">
+                          <div id="status-icon-container" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0">
+                              <ion-icon id="status-icon" name="" class="text-xl sm:text-2xl"></ion-icon>
                           </div>
                           <div>
-                              <p class="text-xs md:text-sm font-bold uppercase tracking-wider mb-1" id="status-label">Status Seleksi</p>
-                              <h3 class="text-xl md:text-2xl font-black" id="status-text">-</h3>
+                              <p class="text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider mb-0.5 sm:mb-1" id="status-label">Status Seleksi</p>
+                              <h3 class="text-lg sm:text-xl md:text-2xl font-black" id="status-text">-</h3>
                           </div>
                       </div>
 
@@ -165,8 +165,8 @@
                                   <ion-icon name="create-outline"></ion-icon> Perbaiki Data
                               </button>
                           </div>
-                          <div class="bg-gray-50 p-6 rounded-2xl border border-gray-200">
-                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                          <div class="bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 overflow-hidden">
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 sm:gap-y-4 gap-x-6 text-sm break-words">
                                   <div><p class="text-gray-500 font-semibold mb-1">Nama Lengkap</p><p class="font-bold text-gray-800" id="det-nama">-</p></div>
                                   <div><p class="text-gray-500 font-semibold mb-1">NISN</p><p class="font-bold text-gray-800" id="det-nisn">-</p></div>
                                   <div><p class="text-gray-500 font-semibold mb-1">Jenis Kelamin</p><p class="font-bold text-gray-800" id="det-jk">-</p></div>
@@ -240,7 +240,7 @@
     <!-- MODAL EDIT PROFIL SISWA -->
     <div id="modal-edit-siswa" class="fixed inset-0 z-[100] bg-black/80 hidden flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] shadow-2xl relative animate__animated animate__zoomIn animate__faster flex flex-col overflow-hidden">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+            <div class="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-bold text-[#27AE60] flex items-center gap-2">
                     <ion-icon name="create-outline"></ion-icon> <span>Perbaiki Data Diri</span>
                 </h3>
@@ -248,7 +248,7 @@
                     <ion-icon name="close-outline"></ion-icon>
                 </button>
             </div>
-            <div class="p-6 flex-1 min-h-0 overflow-y-auto bg-white custom-scrollbar">
+            <div class="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto bg-white custom-scrollbar">
                 <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-xl text-sm mb-6 flex gap-3 items-start shadow-sm">
                     <ion-icon name="warning" class="text-2xl shrink-0 text-yellow-600 mt-0.5"></ion-icon>
                     <p class="leading-relaxed">Pastikan data yang Anda ubah sudah benar. Perbaikan data secara mandiri <strong>hanya dapat dilakukan selama status pendaftaran masih dalam tahap "Sedang Diverifikasi"</strong>.</p>
@@ -277,9 +277,9 @@
                     </div>
                 </form>
             </div>
-            <div class="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
-                <button type="button" onclick="closeEditModal()" class="px-6 py-2.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold transition">Batal</button>
-                <button type="submit" form="edit-siswa-form" id="btn-save-edit" class="px-6 py-2.5 rounded-xl bg-[#27AE60] text-white font-bold hover:bg-green-700 transition flex items-center gap-2 active:scale-95 shadow-md">
+            <div class="p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                <button type="button" onclick="closeEditModal()" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold transition">Batal</button>
+                <button type="submit" form="edit-siswa-form" id="btn-save-edit" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#27AE60] text-white font-bold hover:bg-green-700 transition flex items-center justify-center gap-2 active:scale-95 shadow-md">
                     <ion-icon name="save-outline" class="text-xl"></ion-icon> Simpan Perubahan
                 </button>
             </div>
@@ -288,7 +288,7 @@
 
     <!-- SUPABASE & JAVASCRIPT -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- <script src="js/script.js"></script> Komentar: Dimatikan sementara untuk mencegah konflik JS -->
+    <script src="js/script.js"></script>
     <script src="js/portal-siswa.js"></script>
 </body>
-</html>
+</html>>
